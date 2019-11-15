@@ -36,6 +36,8 @@ unsigned char pw3_flag = 0;
 unsigned char first_pw = 1;
 unsigned char second_pw = 2;
 unsigned char third_pw = 3;
+
+unsigned char temp = 0x00;
 // Function prototyping
 void selectionTick();
 void setPW();
@@ -323,7 +325,7 @@ void displayTick()
 			{
 				LCD_DisplayString(1,"SERVO");
 			}
-			*/
+*/
 			break;
 	}
 }
@@ -346,7 +348,8 @@ int main(void)
 	TimerSet(125);
 	TimerOn();
 	initUSART(0); // using usart0
-	
+	//displayTick();
+	//passwordFlag = 1;
     while (1) 
     {
 	
@@ -397,6 +400,7 @@ void selectionTick()
 				select_state = SELECT_START;
 			break;
 		case SELECT_LED:
+			
 			if(getPosition() == 1)
 			{
 				select_state = SELECT_LED;
@@ -438,6 +442,19 @@ void selectionTick()
 		{	
 			LCD_ClearScreen();
 			LCD_DisplayString(1,"Press for LED");
+			if (BUTTON)
+			{
+				if(USART_IsSendReady(0))
+				{
+					USART_Flush(0);
+					temp = 0xFF;
+					USART_Send(temp,0); //send to follower
+					if (USART_HasTransmitted(0))
+					{
+						LCD_DisplayString(1,"SENT");
+					}
+				}
+			}
 		}
 			break;
 		case SELECT_SERVO:
@@ -484,19 +501,7 @@ void buttonTick()
 		//servo_PWM_off();
 		break;
 		case BUTTON_PRESSED:
-		if (passwordFlag == 1)
-		{
-			if(USART_IsSendReady(0))
-			{
-				USART_Flush(0);
-				temp = 0xFF;
-				USART_Send(temp,0); //send to follower
-				if (USART_HasTransmitted(0))
-				{
-					LCD_DisplayString(1,"SENT");
-				}
-			}
-		}
+	
 		
 		break;
 		case BUTTON_HELD:
@@ -556,5 +561,4 @@ void combineTick()
 			break;
 	}
 }
-
 
