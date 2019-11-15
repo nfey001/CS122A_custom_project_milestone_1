@@ -7,8 +7,13 @@ I acknowledge all content contained herein, excluding template or example code, 
 */
 #ifndef JOYSTICK_H
 #define JOYSTICK_H
+#include <avr/interrupt.h>
+#include <avr/io.h>
+#include <stdio.h>
 static unsigned char position = 0;
+static unsigned char dispPos = 0;
 unsigned short tmpA = 0x0000;
+#define REF_AVCC (1<<REFS0);
 /*------------------------------ JOYSTICK FUNCTIONALITY------------------------*/
 void ADC_init()
 {
@@ -18,7 +23,7 @@ void ADC_init()
 
 unsigned char getPosition()
 {
-	
+
 	if (ADMUX  == 1)
 	{
 		ADMUX = 0; // switch between ADC1->ADC0
@@ -27,6 +32,8 @@ unsigned char getPosition()
 	{
 		ADMUX = 1; // switch between ADC0->ADC1
 	}
+	
+	//ADMUX = REF_AVCC;
 	tmpA = ADC; // the value ranges between 0 to 1024 (2^10)
 	if (tmpA < 100 && ADMUX == 1) // left
 	{

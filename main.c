@@ -315,10 +315,15 @@ void displayTick()
 		case Display_Start:
 			break;
 		case DisplayPW:
-			if (KeypadInput == '\0') // idle, no key presses
+		/*	if (dispPos == 1) // idle, no key presses
 			{
-				LCD_DisplayString(1,"Enter PW");
+				LCD_DisplayString(1,"LED");
 			}
+			if (dispPos == 2)
+			{
+				LCD_DisplayString(1,"SERVO");
+			}
+			*/
 			break;
 	}
 }
@@ -330,7 +335,7 @@ int main(void)
 	DDRC = 0xFF; PORTC = 0x00; // PC7..4 outputs init 0s, PC3..0 inputs init 1s
 	DDRD = 0xFF; PORTD = 0x00;
     LCD_init();
-	//ADC_init();
+	ADC_init();
 	button_state = BUTTON_WAIT;
 	
 	display_state = Display_Start;
@@ -341,14 +346,12 @@ int main(void)
 	TimerSet(125);
 	TimerOn();
 	initUSART(0); // using usart0
-	//displayTick();
-	//passwordFlag = 1;
+	
     while (1) 
     {
-	//	setPW();
-		//getPW();
+	
 		combineTick();
-		//selectionTick();
+		
 		/*while (!TimerFlag)
 		{
 			;
@@ -410,11 +413,13 @@ void selectionTick()
 			{
 				select_state = SELECT_LED;
 				position = 0;
+				dispPos = 1;
 			}
 			if (getPosition() == 2)
 			{
 				select_state = SELECT_SERVO;
 				position = 0;
+				dispPos = 2;
 			}
 			break;
 	}
@@ -431,12 +436,14 @@ void selectionTick()
 		*/
 		if (passwordFlag == 1)
 		{	
+			LCD_ClearScreen();
 			LCD_DisplayString(1,"Press for LED");
 		}
 			break;
 		case SELECT_SERVO:
 			if (passwordFlag == 1)
 			{
+				LCD_ClearScreen();
 				LCD_DisplayString(1,"Press for Servo");
 			}
 			break;
@@ -542,6 +549,7 @@ void combineTick()
 		case COMBINE_TICKS:
 			passwordTick();
 			selectionTick();
+			displayTick();
 			//master_tick();
 			buttonTick();
 			
@@ -549,67 +557,4 @@ void combineTick()
 	}
 }
 
-enum checkPW_States {CHECK_START, CHECK_PW}check_state = CHECK_START;
-void checkPWTick()
-{
-	switch(check_state) // transitions
-	{
-		case CHECK_START:
-			check_state = CHECK_PW;
-			break;
-		case CHECK_PW:
-			if (passwordFlag == 1)
-			{
-				// check input to the eeprom 
-				
-			}
-			break;
-	}
-}
 
-
-void master_tick()
-{
-	unsigned char temp = 0x00;
-	switch(m_state) // transitions
-	{
-		case WAIT:
-		if (BUTTON)
-			{
-				m_state = SEND;
-			}
-		else
-			m_state = WAIT;
-		break;
-		case SEND:
-		m_state = WAIT;
-		break;
-		default:
-		m_state = WAIT;
-		break;
-	}
-	
-	switch(m_state) // actions
-	{
-		case WAIT:
-		
-		break;
-		case SEND:
-		
-			if(USART_IsSendReady(0))
-			{
-				//USART_Flush(0);
-				temp = 0xFF;
-				USART_Send(temp,0); //send to follower
-			}
-		
-			if (USART_HasTransmitted(0))
-			{
-				LCD_DisplayString(1,"SENT");
-			}
-		break;
-		default:
-		break;
-	}
-	
-}
