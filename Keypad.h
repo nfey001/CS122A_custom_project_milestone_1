@@ -21,26 +21,26 @@ unsigned char GetKeypadKey() {
 
 	PORTB = 0xEF; // Enable col 4 with 0, disable others with 1’s
 	asm("nop"); // add a delay to allow PORTC to stabilize before checking
-	if (GetBit(PINB,0)==0) { return('1'); }
-	if (GetBit(PINB,1)==0) { return('4'); }
-	if (GetBit(PINB,2)==0) { return('7'); }
+	if (GetBit(PINB,0)==0) { return(1); }
+	if (GetBit(PINB,1)==0) { return(4); }
+	if (GetBit(PINB,2)==0) { return(7); }
 	if (GetBit(PINB,3)==0) { return('*'); }
 
 	// Check keys in col 2
 	PORTB = 0xDF; // Enable col 5 with 0, disable others with 1’s
 	asm("nop"); // add a delay to allow PORTC to stabilize before checking
-	if (GetBit(PINB,0)==0) { return('2'); }
-	if (GetBit(PINB,1)==0) { return('5'); }
-	if (GetBit(PINB,2)==0) { return('8'); }
-	if (GetBit(PINB,3)==0) { return('0'); }
+	if (GetBit(PINB,0)==0) { return(2); }
+	if (GetBit(PINB,1)==0) { return(5); }
+	if (GetBit(PINB,2)==0) { return(8); }
+	if (GetBit(PINB,3)==0) { return(0); }
 	// ... *****FINISH*****
 
 	// Check keys in col 3
 	PORTB = 0xBF; // Enable col 6 with 0, disable others with 1’s
 	asm("nop"); // add a delay to allow PORTC to stabilize before checking
-	if (GetBit(PINB,0)==0) { return('3'); }
-	if (GetBit(PINB,1)==0) { return('6'); }
-	if (GetBit(PINB,2)==0) { return('9'); }
+	if (GetBit(PINB,0)==0) { return(3); }
+	if (GetBit(PINB,1)==0) { return(6); }
+	if (GetBit(PINB,2)==0) { return(9); }
 	if (GetBit(PINB,3)==0) { return('#'); }
 	// ... *****FINISH*****
 

@@ -26,14 +26,14 @@ unsigned char getPosition()
 
 	if (ADMUX  == 1)
 	{
-		ADMUX = 0; // switch between ADC1->ADC0
+		ADMUX = 0; // switch between ADC1->ADC0 
 	}
 	else if (ADMUX == 0)
 	{
 		ADMUX = 1; // switch between ADC0->ADC1
 	}
 	
-	//ADMUX = REF_AVCC;
+	
 	tmpA = ADC; // the value ranges between 0 to 1024 (2^10)
 	if (tmpA < 100 && ADMUX == 1) // left
 	{
