@@ -28,6 +28,7 @@ uint8_t defPW[3];
 unsigned char passwordFlag = 0; // turns to 1 when password is guessed correctly
 unsigned char passwordInput;
 unsigned char incorrectFlag = 0; // turns to 1 when incorrect pw
+unsigned char LEDFlag = 0;
 
 unsigned char pw1_flag = 0;
 unsigned char pw2_flag = 0;
@@ -53,15 +54,12 @@ void SPI_MasterTransmit(unsigned char cData);
 //--------User defined FSMs---------------------------------------------------
 //Enumeration of states.
 enum KeypadInputState { Keypad_Start, Keypad_wait, Keypad_key } key_state = Keypad_Start;
-enum passwordState {Password_Start, Password_insert_1, Password_insert_2, Password_insert_3, Password_check} password_state = Password_Start;
+enum passwordState {Password_Start, Password_insert_1, Password_insert_2, Password_insert_3,Password_enter, Password_check, Password_loop} password_state = Password_Start;
 enum displayPW {Display_Start, DisplayPW} display_state = Display_Start;
 enum selectState {SELECT_START, SELECT_LED, SELECT_SERVO} select_state = SELECT_START;
 enum combineState {COMBINE_START, COMBINE_TICKS} combine_state = COMBINE_START;
 enum ButtonState {BUTTON_WAIT, BUTTON_PRESSED, BUTTON_HELD, BUTTON_RELEASED} button_state;
 enum master_state {WAIT, SEND} m_state;
-
-
-
 
 void servo_PWM_off() // turn off servo motor
 {
@@ -243,15 +241,28 @@ void passwordTick()
 		case Password_insert_3:
 			if (pw3_flag == 1)
 			{
+				password_state = Password_enter;
+			}
+			break;
+		case Password_enter:
+			KeypadInput = GetKeypadKey();
+			if (KeypadInput == '*')
+			{
 				password_state = Password_check;
 			}
+			else 
+				password_state = Password_enter;
 			break;
 			case Password_check:
 				if (incorrectFlag == 1)
 				{
 					password_state = Password_Start;
 				}
-				
+				else
+					password_state = Password_loop;
+				break;
+			case Password_loop:
+				password_state = Password_loop;
 				break;
 	}
 	
@@ -261,7 +272,7 @@ void passwordTick()
 		
 			break;
 		case Password_insert_1:
-			
+			delay_ms(500);
 			KeypadInput = GetKeypadKey();
 			if (KeypadInput == '\0')
 			{
@@ -275,8 +286,9 @@ void passwordTick()
 			}
 			if (KeypadInput != '\0')
 			{
-				pw1_flag = 1;
 				userPW[0] = KeypadInput;
+				pw1_flag = 1;
+				
 			}
 		
 		/*	if (KeypadInput != first_pw && (KeypadInput != '\0'))
@@ -295,8 +307,9 @@ void passwordTick()
 			}
 			if (KeypadInput != '\0')
 			{
-				pw2_flag = 1;
 				userPW[1] = KeypadInput;
+				pw2_flag = 1;
+				
 			}
 			
 			break;
@@ -311,13 +324,19 @@ void passwordTick()
 			}
 			if (KeypadInput != '\0')
 			{
-				pw3_flag = 1;
 				userPW[2] = KeypadInput;
+				pw3_flag = 1;
+				
 				//passwordFlag = 1;
 			}
 			break;
+		case Password_enter:
+			delay_ms(500);
+		// user presses "*" to enter
+			LCD_DisplayString(1,"***");
+			break;
 		case Password_check:
-			//delay_ms(1000);
+			delay_ms(500);
 			for (int i = 1; i <= 3; i++)
 			{
 				if (userPW[i] == defPW[i])
@@ -326,6 +345,17 @@ void passwordTick()
 				}
 				else
 					incorrectFlag = 1;
+			}
+			break;
+		case Password_loop:
+			delay_ms(500);
+			KeypadInput = GetKeypadKey();
+			if (passwordFlag == 1)
+			{
+				if (KeypadInput != '\0')
+				{
+					password_state = Password_loop;
+				}
 			}
 			break;
 	}
@@ -379,8 +409,6 @@ int main(void)
 	TimerSet(125);
 	TimerOn();
 	initUSART(0); // using usart0
-	//displayTick();
-	//passwordFlag = 1;
 	setPW();
     while (1) 
     {
@@ -407,14 +435,11 @@ void setPW()
 
 void getPW()
 {
-	//LCD_ClearScreen();
-	unsigned char count = 0;
 	for(int i = 1; i <= 3; i++)
 	{
 		LCD_Cursor(i);
 		LCD_WriteData(userPW[i-1] + '0');
-		//LCD_DisplayString(1,userPW[0] + '0');
-		count++;
+	
 	}
 }
 
@@ -469,11 +494,6 @@ void selectionTick()
 			
 			break;
 		case SELECT_LED:
-	/*	if (incorrectFlag == 1)
-		{
-			LCD_DisplayString(1,"Incorrect PW");
-		}
-		*/
 		if (passwordFlag == 1)
 		{	
 			LCD_ClearScreen();
@@ -485,13 +505,29 @@ void selectionTick()
 			//LCD_DisplayString(1,"Press for LED");
 			if (BUTTON)
 			{
+				if (LEDFlag == 1)
+				{
+					LEDFlag = 0;
+				}
+				else
+				LEDFlag = 1;
+				
 				if(USART_IsSendReady(0))
 				{
 					USART_Flush(0);
-					temp = 0xFF;
+					if (LEDFlag == 1)
+					{
+						temp = 0xFF;
+					}
+					if(LEDFlag == 0)
+					{
+						temp = 0x00;
+					}
+					
 					USART_Send(temp,0); //send to follower
 					if (USART_HasTransmitted(0))
 					{
+						
 						LCD_DisplayString(1,"SENT");
 					}
 				}
@@ -549,7 +585,7 @@ void buttonTick()
 		
 		if ( dispPos == 2)
 		{
-			DDRD = 0xFF;
+		DDRD = 0xFF;
 		TCCR1A |= (1<<COM1A1) | (1<<COM1B1) | (1<<WGM11);
 		TCCR1B |= (1<<WGM13) | (1<<WGM12) | (1<<CS11) | (1<<CS10);
 		ICR1 = 2499;
@@ -596,7 +632,6 @@ void combineTick()
 			passwordTick();
 			selectionTick();
 			displayTick();
-			//master_tick();
 			buttonTick();
 			
 			break;
